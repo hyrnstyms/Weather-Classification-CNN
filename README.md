@@ -70,19 +70,19 @@ Proje dosyaları GitHub üzerinde düzenli bir yapıda tutulmuştur.
 * Python 3.8+
 * Kütüphaneler: `torch`, `torchvision`, `gradio`, `pillow`
 
-### Adım 1: Projeyi İndirme
+ Projeyi İndirme
 ```bash
 git clone [https://github.com/hyrnstyms/Weather-Classification-CNN.git](https://github.com/hyrnstyms/Weather-Classification-CNN.git)
 cd Weather-Classification-CNN
 pip install -r requirements.txt
 
-**Adım 2: Modeli Eğitme**
+**Modeli Eğitme**
 Modeli sıfırdan eğitmek ve `models/weather_model.pth` dosyasını oluşturmak için:
 
 ```bash
 python train.py
 
-**Adım 3: Arayüzü Başlatma**
+**Arayüzü Başlatma**
 Eğitilen modeli kullanıcı dostu web arayüzünde test etmek için:
 
 ```bash
