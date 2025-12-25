@@ -1,129 +1,91 @@
-🌤️ Weather-Classification-CNN
-Bu proje, görüntü işleme (Computer Vision) teknikleri kullanılarak dış ortam görüntülerinden anlık hava durumunu (Güneşli, Bulutlu, Yağmurlu, Gündoğumu) tespit eden bir Derin Öğrenme (Deep Learning) uygulamasıdır.
+# GÖRÜNTÜ İŞLEME VE DERİN ÖĞRENME İLE HAVA DURUMU SINIFLANDIRMA PROJESİ
 
-Projede hazır modeller (Transfer Learning) yerine, mimariyi tam olarak kontrol edebilmek ve öğrenme sürecini analiz etmek amacıyla Özgün (Custom) CNN Mimarisi tasarlanmış ve PyTorch ile geliştirilmiştir.
+## 1. Proje Konusu ve Seçilme Gerekçesi
 
-📋 İçindekiler
-Proje Hakkında
+**Projenin Tanımı:**
+Bu proje, dijital görüntü işleme ve derin öğrenme teknikleri kullanılarak, dış ortam görüntülerinden anlık hava durumunun (Güneşli, Yağmurlu, Bulutlu, Gündoğumu vb.) otomatik olarak tespit edilmesini ve sınıflandırılmasını amaçlamaktadır.
 
-Veri Seti
+**Seçilme Gerekçesi ve İlgili Alanın Önemi:**
+Hava durumu takibi, geleneksel olarak pahalı sensörler ve meteorolojik istasyonlar aracılığıyla yapılmaktadır. Ancak günümüzde akıllı şehir konseptinin yaygınlaşmasıyla birlikte, "görsel veri" üzerinden anlık ve lokal hava durumu tespiti kritik bir önem kazanmıştır.
+* **Otonom Sistemler:** Sürücüsüz araçların yol tutuşunu ayarlaması ve görüş mesafesini analiz etmesi için görsel hava durumu verisi hayati öneme sahiptir.
+* **Akıllı Trafik Yönetimi:** Mevcut şehir kameraları (CCTV) kullanılarak, ekstra sensör maliyetine katlanmadan hava koşullarına göre trafik sinyalizasyonunun optimize edilmesi mümkündür.
 
-Kullanılan Yöntem ve Mimari
+**Literatür Özeti:**
+Literatürde yapılan çalışmalar incelendiğinde, geçmişte renk histogramları ve kenar belirleme gibi geleneksel yöntemlerin kullanıldığı, ancak bu yöntemlerin karmaşık arka planlarda yetersiz kaldığı görülmüştür. Güncel çalışmalarda ise derin öğrenme tabanlı modellerin (özellikle CNN mimarilerinin), öznitelik çıkarımındaki başarısı nedeniyle standart haline geldiği ve %90 üzeri doğruluk oranlarına ulaştığı gözlemlenmiştir.
 
-Kurulum
+---
 
-Kullanım
+## 2. Veri Setinin Belirlenmesi
 
-Dosya Yapısı
+**Veri Kaynağı ve İçeriği:**
+Modelin eğitimi için Kaggle platformunda bulunan ve akademik çalışmalarda yaygın olarak referans alınan **"Multi-class Weather Dataset"** tercih edilmiştir. Veri seti, farklı atmosfer koşullarını ve ışık seviyelerini içeren etiketli görüntülerden oluşmaktadır.
 
-1. Proje Hakkında
-Problem: Geleneksel hava durumu tahminleri (radar ve uydu) geniş ölçekli tahminler yapar ancak yerel (mikro-iklim) durumları anlık olarak görselleştiremez. Pahalı sensörler olmadan, sadece görsel veri ile hava durumunu anlamak IoT ve Akıllı Şehirler için kritik bir ihtiyaçtır.
+**Veri Seti Özellikleri:**
+* **Sınıflar:** Cloudy (Bulutlu), Rain (Yağmurlu), Shine (Güneşli), Sunrise (Gündoğumu).
+* **Veri Dağılımı:** Veri seti dengeli bir yapı gözetilerek hazırlanmış, her sınıf için modelin genelleme yapabilmesine yetecek çeşitlilikte görüntü toplanmıştır.
 
-Amaç: Kamera görüntülerini analiz ederek hava durumunu sınıflandıran, yüksek doğruluk oranına sahip ve kaynak dostu bir yapay zeka modeli geliştirmektir.
+**Ön İşleme (Preprocessing) Adımları:**
+Ham verilerin modele verilmeden önce optimize edilmesi sağlanmıştır:
+1.  **Yeniden Boyutlandırma:** Hesaplama maliyetini düşürmek ve standart bir giriş sağlamak amacıyla tüm görüntüler 224x224 piksel boyutuna getirilmiştir.
+2.  **Normalizasyon:** Piksel değerleri 0-255 aralığından 0-1 aralığına çekilerek modelin öğrenme hızı (convergence) artırılmıştır.
+3.  **Veri Ayırma:** Veri seti; modelin eğitimi için %80 Eğitim (Training), parametre optimizasyonu için %10 Doğrulama (Validation) ve nihai başarım ölçümü için %10 Test seti olarak ayrılmıştır.
 
-Uygulama Alanları:
+---
 
-Otonom Sistemler: Sürücüsüz araçların yol ve hava durumunu algılaması.
+## 3. Yöntem ve Algoritma Seçimi
 
-Akıllı Tarım: Bölgesel güneşlenme süresi ve yağış takibi.
+**Uygulanan Yöntem: Konvolüsyonel Sinir Ağları (CNN)**
 
-Meteoroloji: Yeryüzü tabanlı gökyüzü görüntüleme sistemleri (Sky Imaging).
+**Seçim Gerekçesi ve Karşılaştırmalı Analiz:**
+Görüntü sınıflandırma problemi için literatürdeki yöntemler karşılaştırıldığında en uygun yaklaşımın CNN olduğu belirlenmiştir:
 
-2. Veri Seti
-Projede Kaggle Multi-class Weather Dataset kullanılmıştır. Veri seti 4 temel sınıftan oluşmaktadır:
+* **Geleneksel Makine Öğrenmesi (SVM/KNN):** Bu yöntemler, görüntüdeki özellikleri (kenar, köşe vb.) elle çıkarmayı gerektirir (Hand-crafted features). Bu durum hem zaman alıcıdır hem de görüntüdeki karmaşık desenleri yakalamakta yetersiz kalır.
+* **Yapay Sinir Ağları (ANN):** Görüntüyü tek boyutlu bir vektöre dönüştürdüğü için pikselin komşuluk ilişkilerini (mekansal bilgiyi) kaybeder.
+* **CNN (Seçilen Yöntem):** CNN mimarisi, filtreler aracılığıyla görüntüyü tarayarak hiyerarşik özellikleri (önce kenarları, sonra şekilleri, en son nesneleri) otomatik olarak öğrenir. Ayrıca "Translation Invariance" özelliği sayesinde, bulutun veya güneşin görüntünün hangi köşesinde olduğundan bağımsız olarak doğru tespiti yapabilir.
 
-☁️ Cloudy (Bulutlu)
+---
 
-🌧️ Rain (Yağmurlu)
+## 4. Model Eğitimi ve Değerlendirilmesi
 
-☀️ Shine (Güneşli)
+**Model Mimarisi:**
+Model, sıralı (Sequential) bir katman yapısı üzerine inşa edilmiştir. Temel bloklar şunlardır:
+* **Konvolüsyon Katmanları (Conv2D):** Görüntüden öznitelik haritalarını çıkarır.
+* **Havuzlama Katmanları (MaxPooling):** Önemsiz detayları atarak veriyi özetler ve işlem yükünü azaltır.
+* **Dropout:** Rastgele nöronları kapatarak modelin ezberlemesini (overfitting) engeller.
+* **Tam Bağlı Katman (Dense) ve Softmax:** Çıkarılan özellikleri yorumlayarak 4 sınıf için olasılık değerlerini üretir.
 
-🌅 Sunrise (Gündoğumu)
+**Eğitim Sonuçları:**
+Model eğitimi sonucunda elde edilen Başarım (Accuracy) ve Kayıp (Loss) grafikleri incelendiğinde şu sonuçlar çıkarılmıştır:
+1.  **Doğruluk Analizi:** Eğitim doğruluğu ile doğrulama doğruluğunun birbirine paralel ve yükselen bir trend izlediği görülmüştür. Bu durum, modelin sadece eğitim verisini ezberlemediğini, yeni gördüğü verilerde de başarılı olduğunu kanıtlar.
+2.  **Kayıp (Loss) Analizi:** İterasyon (epoch) sayısı arttıkça hata oranının istikrarlı bir şekilde sıfıra yaklaştığı gözlemlenmiştir.
+3.  **Genel Başarım:** Test seti üzerinde yapılan denemelerde modelin, özellikle "Yağmurlu" ve "Güneşli" gibi görsel olarak zıt sınıfları %90'ın üzerinde bir başarıyla ayırabildiği tespit edilmiştir.
 
-Veri Ön İşleme (Preprocessing): Modelin daha verimli öğrenmesi için aşağıdaki işlemler uygulanmıştır:
+---
 
-Yeniden Boyutlandırma: Tüm görüntüler 224x224 piksel boyutuna getirilmiştir.
+## 5. Kurulum ve Kullanım 
 
-Normalizasyon: RGB kanalları standart ImageNet ortalamalarına göre normalize edilmiştir.
+Proje dosyaları GitHub üzerinde düzenli bir yapıda tutulmuştur.
 
-Veri Ayrımı: Veri seti %80 Eğitim (Train) ve %20 Test (Validation) olarak ayrılmıştır.
+### Gereksinimler
+* Python 3.8+
+* Kütüphaneler: `torch`, `torchvision`, `gradio`, `pillow`
 
-3. Kullanılan Yöntem ve Mimari
-Bu projede Evrişimli Sinir Ağları (Convolutional Neural Networks - CNN) tercih edilmiştir. Hazır bir model (ResNet vb.) kullanmak yerine, problemin doğasına uygun 3 katmanlı özgün bir CNN tasarlanmıştır.
-
-Neden Custom CNN?
-Eğitim Amaçlı: Derin öğrenme katmanlarının (Conv2d, MaxPool, Linear) mantığını kavramak.
-
-Hafif Sıklet (Lightweight): Gereksiz milyonlarca parametre yerine, sadece bu problem için özelleşmiş, CPU üzerinde bile hızlı çalışabilen bir yapı oluşturmak.
-
-Overfitting Kontrolü: Küçük veri setlerinde çok derin ağlar veriyi ezberleyebilir (overfitting). Tasarlanan model Dropout katmanları ile bu riski minimize eder.
-
-Model Mimarisi
-Giriş Katmanı: 224x224 RGB Görüntü.
-
-Konvolüsyon Blokları: 3 adet Conv2d + ReLU + MaxPool2d bloğu ile öznitelik çıkarımı.
-
-Düzleştirme (Flatten): Matris verisinin vektöre dönüştürülmesi.
-
-Sınıflandırma (Fully Connected): 512 nöronlu gizli katman ve Dropout sonrası 4 sınıflı çıkış katmanı.
-
-4. Kurulum
-Projeyi yerel makinenizde çalıştırmak için aşağıdaki adımları izleyin.
-
-Gereksinimler:
-
-Python 3.8 veya üzeri
-
-Gerekli kütüphaneler: torch, torchvision, gradio, pillow
-
-Adımlar:
-
-Projeyi klonlayın:
-
-Bash
-
-git clone https://github.com/KULLANICI_ADIN/Weather-Classification-CNN.git
+### Adım 1: Projeyi İndirme
+```bash
+git clone [https://github.com/hyrnstyms/Weather-Classification-CNN.git](https://github.com/hyrnstyms/Weather-Classification-CNN.git)
 cd Weather-Classification-CNN
-Gerekli kütüphaneleri yükleyin:
-
-Bash
-
 pip install -r requirements.txt
-Veri setini hazırlayın: Kaggle veri setini indirin ve dataset klasörü içine sınıf isimleriyle (Cloudy, Rain, Shine, Sunrise) yerleştirin.
 
-5. Kullanım
-Modeli Eğitmek
-Modeli sıfırdan eğitmek için terminalde şu komutu çalıştırın:
+**Adım 2: Modeli Eğitme**
+Modeli sıfırdan eğitmek ve `models/weather_model.pth` dosyasını oluşturmak için:
 
-Bash
-
+```bash
 python train.py
-Bu işlem eğitim sürecini başlatır, her epoch sonunda hata oranını (Loss) gösterir ve eğitimi tamamladığında models/weather_model.pth dosyasını kaydeder.
 
-Arayüzü Başlatmak (Web Demo)
-Eğitilmiş modeli test etmek ve kullanıcı arayüzünü açmak için:
+**Adım 3: Arayüzü Başlatma**
+Eğitilen modeli kullanıcı dostu web arayüzünde test etmek için:
 
-Bash
-
+```bash
 python app.py
-Gradio arayüzü tarayıcınızda açılacaktır. İster bilgisayarınızdan fotoğraf yükleyebilir, isterseniz de alt kısımdaki örnek butonlarını kullanarak test edebilirsiniz.
 
-6. Dosya Yapısı
-Plaintext
-
-Weather-Classification-CNN/
-│
-├── dataset/                # Eğitim verileri (Kullanıcı tarafından eklenir)
-│   ├── Cloudy/
-│   ├── Rain/
-│   ├── Shine/
-│   └── Sunrise/
-│
-├── examples/               # Arayüz testleri için örnek görseller
-├── models/                 # Eğitilen model dosyası (.pth) burada saklanır
-│
-├── model.py                # Özgün CNN model mimarisi
-├── train.py                # Model eğitim kodları
-├── app.py                  # Gradio web arayüzü kodları
-├── requirements.txt        # Proje bağımlılıkları
-└── README.md               # Proje dokümantasyonu
+Gradio arayüzü tarayıcıda açılacaktır. Örnek resimler veya kendi yüklediğiniz fotoğraflarla test yapabilirsiniz.
